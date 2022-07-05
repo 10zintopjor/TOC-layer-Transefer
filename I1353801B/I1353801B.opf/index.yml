@@ -1,0 +1,54 @@
+id: 4c782c6c754b41e6a21b5aefa0f627d5
+annotation_type: index
+revision: '00001'
+annotations:
+  14223e99e9ea44028334c6dfcf9612a8:
+    title: ལེའུ་དང་པོ
+    span:
+      start: 0
+      end: 5075
+  01426333cd754aceb79ce5813512d910:
+    title: ལེའུ་གཉིས་པ
+    span:
+      start: 5075
+      end: 13237
+  c05cf7afbb09455ca0105945426b33a6:
+    title: ལེའུ་གསུམ་པ
+    span:
+      start: 13237
+      end: 17249
+  c223271afde5440a9669066c7c03a123:
+    title: ལེའུ་བཞི་པ
+    span:
+      start: 17249
+      end: 23312
+  6fc254f914244d99a156397273c130f0:
+    title: ལེའུ་ལྔ་པ
+    span:
+      start: 23312
+      end: 35855
+  88158b3b7e6746a68407e8940ae18e2f:
+    title: ལེའུ་དྲུག་པ
+    span:
+      start: 35855
+      end: 51461
+  2481c32560664743b6d79e2ba926d751:
+    title: ལེའུ་བདུན་པ
+    span:
+      start: 51461
+      end: 60591
+  86a549c5662141c28e51091c8ddf5abc:
+    title: ལེའུ་བརྒྱད་པ
+    span:
+      start: 60591
+      end: 82121
+  699241572e174e08944d0fca111fec08:
+    title: ལེའུ་དགུ་པ
+    span:
+      start: 82121
+      end: 101171
+  98296839a42e495cb4fdfbaf0dd34027:
+    title: ལེའུ་བཅུ་པ
+    span:
+      start: 101171
+      end: 109025

@@ -1,20 +1,24 @@
-from distutils.spawn import spawn
-from pathlib import Path
-import yaml
-from logging import raiseExceptions
-import os
-from pathlib import Path
-from uuid import uuid4
-import shutil
+from email.mime import base
+from lib2to3.pytree import convert
+from os import write
+from requests import request
 import requests
-import re
-import json
-from bs4 import BeautifulSoup
-from openpecha.core.annotation import Page, Span
+from openpecha.core.ids import get_base_id,get_initial_pecha_id
+from datetime import datetime
 from openpecha.core.layer import Layer, LayerEnum
-from openpecha.core.metadata import InitialCreationType,InitialPechaMetadata
-from openpecha.core.pecha import OpenPechaFS
-from openpecha.utils import load_yaml
+from openpecha.core.pecha import OpenPechaFS 
+from openpecha.core.metadata import InitialPechaMetadata,InitialCreationType
+from bs4 import BeautifulSoup
+from openpecha.core.annotation import AnnBase, Span
+from uuid import uuid4
+from pathlib import Path
+from openpecha import github_utils,config
+from zipfile import ZipFile
+from pyewts import pyewts
+import re
+import logging
+import csv
+import yaml
 
 
 index_map = {}
@@ -53,6 +57,38 @@ def neighborhood(iterable):
         current_item = next_item
     yield (prev_item, current_item, None)
 
+def create_opf(base_text):
+        pecha_id = get_initial_pecha_id()
+        base_id = get_base_id()
+        print(pecha_id)
+        opf_path = f"{pecha_id}/{pecha_id}.opf"
+        opf = OpenPechaFS(path =opf_path)
+        bases = {f"{base_id}":base_text}
+        opf.base = bases
+        opf.save_base()
+        instance_meta = InitialPechaMetadata(
+            id=pecha_id,
+            source = "P000246",
+            initial_creation_type=InitialCreationType.input,
+            source_metadata={
+                "title":"༄༅། །བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པའི་ཟིན་བྲིས་མཚུངས་མེད་བླ་མའི་ཞལ་རྒྱུན་བཞུགས་སོ།",
+                "language": "bo"
+            })  
+        index = Layer(annotation_type=LayerEnum.index, annotations=get_index_annotations(base_id))      
+        opf._meta = instance_meta
+        opf._index = index
+        opf.save_index()
+        opf.save_meta()
+        return base_id
+
+def get_index_annotations(base_id):
+    annotation = []
+    for chapter in index_map.keys():
+        spans = get_spans(index_map[chapter],base_id)
+        annotation.append({uuid4().hex:{"title":chapter.replace("\n",""),"span":spans}})
+    annotations =  {uuid4().hex:{"parts":annotation}}
+    return annotations
+
 def get_index_map(seg_span,toc_iter,text):
     global prev_toc,cur_toc,next_toc
     cur_title,_,cur_toc_end = cur_toc
@@ -66,15 +102,22 @@ def get_index_map(seg_span,toc_iter,text):
         
     return
 
+def get_spans(spans,base_id):
+    spans_res = []
+    for span in spans:
+        start,end = span
+        spans_res.append({"base":base_id,"start":start,"end":end})
+    return spans_res
+
 def update_index(cur_title,text):
     global index_map,prev_end
     if not index_map.keys():
-        index_map.update({cur_title:(0,len(text))})
+        index_map[cur_title] = [(0,len(text))]
     elif cur_title not in index_map.keys():
-        index_map.update({cur_title:(prev_end,prev_end+len(text))})
-    else:
-        prev_start,prev_end = index_map[cur_title]
-        index_map.update({cur_title:(prev_start,prev_end+len(text))})
+        index_map[cur_title] = [(prev_end,prev_end+len(text))]
+    elif cur_title in index_map.keys():
+        index_map[cur_title].append((prev_end,prev_end+len(text)))
+
     prev_end +=len(text)     
     return       
 
@@ -92,15 +135,22 @@ def get_text(span):
     start,end = span
     base_path = "P000246/P000246.opf/base/v001.txt" 
     text = Path(base_path).read_text()
-    return text[start:end]
+    base_text = text[start:end]
+    base_text = remove_noise(base_text)
+    return base_text
+
+def remove_noise(text):
+    nos = ["༡","༢","༣","༤","༥","༦","༧","༨","༩","༠"]
+    for no in nos:
+        text = text.replace(no,"")
+
+    return text    
 
 def main():
     TOC_layer = from_yaml(Path("P000246/P000246.opf/layers/v001/Sabche.yml"))
     root_layer = from_yaml(Path("P000246/P000246.opf/layers/v001/Tsawa.yml"))
     base_text = get_root_text(root_layer,TOC_layer)
-    Path("./base_text.txt").write_text(base_text)
-    yml = toyaml(index_map)
-    Path("./index.yml").write_text(yml)
+    create_opf(base_text)
 
 
 if __name__ == "__main__":
